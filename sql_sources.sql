@@ -59,7 +59,9 @@ END $$ language 'plpgsql';
 CREATE OR REPLACE FUNCTION update_price()
 RETURNS TRIGGER AS
 $$ BEGIN
-  UPDATE orders_prices SET price = (select d.cost FROM details d WHERE d.id = NEW.detail_id) * NEW.quantity;
+  UPDATE orders_prices SET price = 
+    CASE WHEN NEW.id=orders_prices.id THEN (select d.cost FROM details d WHERE d.id = NEW.detail_id) * NEW.quantity
+    ELSE price;
   RETURN NEW;
 END $$ language 'plpgsql';
 
@@ -79,7 +81,8 @@ CREATE TRIGGER calc_price_for_new_record BEFORE INSERT
 CREATE OR REPLACE FUNCTION update_prices_after_detail_upd()
 RETURNS TRIGGER AS
 $$ BEGIN
-  UPDATE orders_prices SET price = NEW.cost * (SELECT o.quantity FROM orders o WHERE o.detail_id = NEW.id);
+  UPDATE orders_prices op SET price = NEW.cost * (SELECT o.quantity FROM orders o WHERE o.detail_id = NEW.id) ;
+            -- WHERE op.id = NEW.id;
   RETURN NEW;
 END $$ language 'plpgsql';
 
@@ -198,18 +201,20 @@ END $$ language 'plpgsql';
 
 
 
-CREATE OR REPLACE FUNCTION search_orders(query_text character varying)
-RETURNS table(id int, purchase_date timestamp, consumer_id int, detail_id int,
-              quantity int, price int) AS
-$$ BEGIN
-  RETURN QUERY SELECT temp.id, temp.purchase_date, temp.consumer_id, temp.detail_id,
-                temp.quantity, temp.price FROM (select o.id, o.purchase_date, o.consumer_id, o.detail_id,
-                                                  o.quantity, o.price, d.name FROM orders o INNER JOIN details d
-                                                ON d.id = o.detail_id) temp
-                                                          INNER JOIN consumers c ON c.id = temp.consumer_id 
-                                                WHERE temp.name LIKE CONCAT('%', query_text, '%') 
-                                                OR c.name LIKE CONCAT('%', query_text, '%');
-END $$ language 'plpgsql';
+-- CREATE OR REPLACE FUNCTION search_orders(query_text character varying)
+-- RETURNS table(id int, purchase_date timestamp, consumer_id int, detail_id int,
+--               quantity int, price int) AS
+-- $$ BEGIN
+--   RETURN QUERY SELECT temp2.id, temp2.purchase_date, temp2.consumer_id, temp2.detail_id,
+--                 temp2.quantity, op.price FROM ((select o.id, o.purchase_date, o.consumer_id, o.detail_id,
+--                                                   o.quantity, o.price, d.name FROM orders o INNER JOIN details d
+--                                                 ON d.id = o.detail_id) temp
+--                                                           INNER JOIN consumers c ON c.id = temp.consumer_id 
+--                                                 WHERE temp.name LIKE CONCAT('%', query_text, '%') OR c.name LIKE CONCAT('%', query_text, '%')) temp2 
+--                                         INNER JOIN orders_prices op ON temp2.id = op.id;
+                                                          
+                                                
+-- END $$ language 'plpgsql';
 
 
 

@@ -66,6 +66,8 @@ class DBApp(QMainWindow, Ui_MainWindow):
         self.searchConsumerButton.clicked.connect(self.search_consumer)
         self.searchDetailButton.clicked.connect(self.search_detail)
         self.orderDeleteButton.clicked.connect(self.delete_order)
+        self.deleteDetailButton.clicked.connect(self.delete_detail)
+        self.deleteConsumerButton.clicked.connect(self.delete_consumer)
 
         self.ordersTable.itemChanged.connect(self.update_order_record)
         self.consumersTable.itemChanged.connect(self.update_consumer_record)
@@ -160,6 +162,9 @@ class DBApp(QMainWindow, Ui_MainWindow):
         consumer_id = self.consumerIdCreateOrderTF.text()
         detail_id = self.detailIdCreateOrderTF.text()
         quantity = self.qunatityCreateOrderTF.text()
+        if consumer_id == '' or detail_id == '' or quantity == '':
+            self.show_alert('Warning', 'Please, fill all fields')
+            return
         try:
             quantity = int(quantity)
         except ValueError:
@@ -173,6 +178,9 @@ class DBApp(QMainWindow, Ui_MainWindow):
     def add_detail(self):
         name = self.nameDetailCreateTF.text()
         quantity = self.priceDetailCreateTF.text()
+        if name == '' or quantity == '':
+            self.show_alert('Warning', 'Please, fill all fields')
+            return
         try:
             quantity = int(quantity)
         except ValueError:
@@ -185,11 +193,16 @@ class DBApp(QMainWindow, Ui_MainWindow):
     def add_consumer(self):
         name = self.nameCreateConsumerTF.text()
         address = self.addressCreateConsumerTF.text()
+        if name == '' or address == '':
+            self.show_alert('Warning', 'Please, fill all fields')
+            return
         self.db.add_consumer(name, address)
         self.show_alert('Success', 'Record was successfully added')
         self.set_data_to_consumers_table()
 
     def search_order(self):
+        self.show_alert('Error', 'Currently unavailable: WIP')
+        return
         name = self.orderSearchTF.text()
         if not name:
             self.show_alert('Warning', 'Please, fill text field')
@@ -229,13 +242,33 @@ class DBApp(QMainWindow, Ui_MainWindow):
             indexes.append(int(self.ordersTable.item(num, 0).text()))
         for index in indexes:
             self.db.delete_order(index)
-            # self.ordersTable.setRowCount(self.ordersTable.rowCount() - 1)
         self.set_data_to_orders_table()
+
+    def delete_consumer(self):
+        rows_nums = set([row.row() for row in self.consumersTable.selectedIndexes()])
+        indexes = []
+        for num in rows_nums:
+            indexes.append(int(self.consumersTable.item(num, 0).text()))
+        for index in indexes:
+            self.db.delete_consumer(index)
+        self.set_data_to_consumers_table()
+
+    def delete_detail(self):
+        rows_nums = set([row.row() for row in self.detailsTable.selectedIndexes()])
+        indexes = []
+        for num in rows_nums:
+            indexes.append(int(self.detailsTable.item(num, 0).text()))
+        for index in indexes:
+            self.db.delete_detail(index)
+        self.set_data_to_details_table()
 
     def update_order_record(self, item):
         if not self.updating:
             index = int(self.ordersTable.item(item.row(), 0).text())
             col_ind = item.column()
+            if col_ind < 2 or col_ind > 4:
+                self.show_alert('Warning', "You can change only consumer's and detail's ids and quantity")
+                return
             value = int(item.text())
             if col_ind == 2:
                 try:
@@ -249,9 +282,6 @@ class DBApp(QMainWindow, Ui_MainWindow):
                     self.show_alert('Error', 'Probably, there is no detail with such id')
             elif col_ind == 4:
                 self.db.update_order_quantity(index, value)
-            else:
-                self.show_alert('Warning', "You can change only consumer's and detail's ids and quantity")
-                return
             self.set_data_to_orders_table()
 
     def update_detail_record(self, item):

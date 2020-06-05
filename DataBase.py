@@ -78,8 +78,9 @@ class DataBase:
         self.cursor.execute("SELECT clear_all();")
 
     def search_orders(self, value):
-        self.cursor.execute("SELECT * FROM search_orders(%s)", (value, ))
-        return self.cursor.fetchall()
+        # self.cursor.execute("SELECT * FROM search_orders(%s)", (value, ))
+        # return self.cursor.fetchall()
+        pass
 
     def search_details(self, value):
         self.cursor.execute("SELECT * FROM search_details(%s)", (value, ))
