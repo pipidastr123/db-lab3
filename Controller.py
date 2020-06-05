@@ -84,11 +84,7 @@ class DBApp(QMainWindow, Ui_MainWindow):
         self.actionRefresh_Orders.triggered.connect(lambda: self.set_data_to_orders_table())
 
     def connect_to_postgres(self, host, port, login, pwd, name, path):
-        self.db = DataBase(address = host,
-                           port = port,
-                           login = login,
-                           password = pwd,
-                           db_name = name,
+        self.db = DataBase(db_name = name,
                            sql_file_source = path)
         self.set_data_to_consumers_table()
         self.set_data_to_details_table()
